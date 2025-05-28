@@ -157,16 +157,24 @@ class Bar(QWidget):
             self.app_bar_manager.remove_appbar()
 
     def bar_pos(self, bar_w: int, bar_h: int, screen_w: int, screen_h: int) -> tuple[int, int]:
-        screen_x = self.screen().geometry().x()
-        screen_y = self.screen().geometry().y()
-        x = int(screen_x + (screen_w / 2) - (bar_w / 2)) if self._alignment['center'] else screen_x
+        geom = self.screen().geometry()
+        sx, sy = geom.x(), geom.y()
 
-        if self._alignment['position'] == "bottom":
-            y = int(screen_y + screen_h - bar_h - self._padding['bottom'])
-        else:
-            y = screen_y
-        
+        a = self._alignment['alignment']
+        if a == 'center':
+            x = int(sx + (screen_w - bar_w) / 2)
+        elif a == 'right':
+            x = int(sx + screen_w - bar_w - self._padding['right'])
+        else:  # 'left'
+            x = int(sx + self._padding['left'])
+
+        if self._alignment['position'] == 'bottom':
+            y = int(sy + screen_h - bar_h - self._padding['bottom'])
+        else:  # 'top'
+            y = int(sy + self._padding['top'])
+
         return x, y
+
 
     def position_bar(self, init=False) -> None:
         bar_width = self._dimensions['width']
