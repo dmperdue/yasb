@@ -16,6 +16,7 @@ from yaml import safe_load, dump
 from xml.dom import SyntaxErr
 from core.utils.css_processor import CSSProcessor
 
+USER_CONFIG_PATH = Path.home() / settings.DEFAULT_CONFIG_DIRECTORY / settings.DEFAULT_CONFIG_FILENAME
 SRC_CONFIGURATION_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(argv[0])
 HOME_CONFIGURATION_DIR = path.join(Path.home(), settings.DEFAULT_CONFIG_DIRECTORY)
 HOME_STYLES_PATH = path.normpath(path.join(HOME_CONFIGURATION_DIR, settings.DEFAULT_STYLES_FILENAME))
@@ -23,6 +24,7 @@ HOME_CONFIG_PATH = path.normpath(path.join(HOME_CONFIGURATION_DIR, settings.DEFA
 DEFAULT_STYLES_PATH = path.normpath(path.join(SRC_CONFIGURATION_DIR, settings.DEFAULT_STYLES_FILENAME))
 DEFAULT_CONFIG_PATH = path.normpath(path.join(SRC_CONFIGURATION_DIR, settings.DEFAULT_CONFIG_FILENAME))
 GITHUB_ISSUES_URL = f"{settings.GITHUB_URL}/issues"
+
 
 class ConfigValidationError(TypeError):
     def __init__(self, message: str, errors: str, filetype: str, filepath: str):
@@ -161,3 +163,13 @@ def get_config_and_stylesheet() -> tuple[dict, str]:
     if error_msg:
         logging.error(error_msg)
         exit(1)
+
+def save_config(cfg: dict) -> None:
+    """
+    Overwrite the user's YAML config file with the given dict.
+    """
+    # ensure the directory exists
+    USER_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # write out
+    with open(USER_CONFIG_PATH, 'w', encoding='utf-8') as f:
+        dump(cfg, f)

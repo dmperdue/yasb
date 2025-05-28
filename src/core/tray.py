@@ -12,7 +12,7 @@ from PyQt6.QtGui import QGuiApplication, QIcon
 from PyQt6.QtWidgets import QMenu, QMessageBox, QSystemTrayIcon
 
 from core.bar_manager import BarManager
-from core.config import get_config
+from core.config import get_config, save_config
 from core.console import WindowShellDialog
 from core.utils.controller import exit_application, reload_application
 from core.utils.win32.utilities import create_shortcut
@@ -121,6 +121,22 @@ class SystemTrayManager(QSystemTrayIcon):
         logs_action = debug_menu.addAction("Logs")
         logs_action.triggered.connect(self._open_logs) 
             
+        config = get_config()
+        bars = config.get('bars', {})
+        # pick the first bar’s config (or False if none defined)
+        if bars:
+            bar_cfg = next(iter(bars.values()))
+            always_on_top = bar_cfg['window_flags']['always_on_top']
+        else:
+            always_on_top = False
+
+        top_action = self.menu.addAction("Always On Top")
+        top_action.setCheckable(True)
+        top_action.setChecked(always_on_top)
+        top_action.triggered.connect(self._toggle_always_on_top)
+
+        self.menu.addSeparator()
+
         self.menu.addSeparator()
         if self.is_komorebi_installed():
             komorebi_menu = self.menu.addMenu("Komorebi")
@@ -317,3 +333,16 @@ class SystemTrayManager(QSystemTrayIcon):
         
     def _open_logs(self):
         WindowShellDialog().exec()
+
+    def _toggle_always_on_top(self, checked: bool):
+        cfg = get_config()
+        # update every defined bar
+        for bar_cfg in cfg.get('bars', {}).values():
+            bar_cfg['window_flags']['always_on_top'] = checked
+
+        save_config(cfg)
+
+        for bar in self._bar_manager.bars:
+            bar.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, checked)
+            bar.show()
+
